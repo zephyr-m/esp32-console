@@ -1,0 +1,32 @@
+-- system — панель «СИСТЕМА» пульта, левая рамка: куча программы числом и
+-- полоской (mem.heap — занято из всего), частота ядра (её ставит платформа
+-- при старте) и шина экрана.
+--
+-- System { left, top, wide, high, megahertz, bus } — место рамки и подписи;
+--     draw(sheet) — на холст canvas.Canvas
+
+use core.mem
+
+System = Box {
+    left = 0,
+    top = 12,
+    wide = 62,
+    high = 52,
+    megahertz = 160,
+    bus = "I2C ок"
+
+    skill draw(sheet) {
+        sheet.frame(left, top, wide, high)
+        @x = left + 3
+        sheet.text(x, top + 2, "СИСТЕМА")
+        @used = mem.heap(0)
+        @total = mem.heap(2)
+        @kb = used / 1024
+        sheet.text(x, top + 13, "куча {kb}К")
+        @span = wide - 6
+        sheet.frame(x, top + 22, span, 3)
+        (total > 0) { sheet.fill(x, top + 22, span * used / total, 3) }
+        sheet.text(x, top + 28, "{megahertz} МГц")
+        out sheet.text(x, top + 39, bus)
+    }
+}

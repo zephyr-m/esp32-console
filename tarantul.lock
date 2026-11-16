@@ -1,0 +1,6 @@
+{
+  "packages": {
+    "ssd1306": {"version": "1", "source": "registry/adapters/esp32/ssd1306", "fingerprint": "crc32 8a745519", "required_by": "project"},
+    "i2c_esp32": {"version": "1", "source": "registry/adapters/esp32/i2c", "fingerprint": "crc32 98e40745", "required_by": "ssd1306"}
+  }
+}

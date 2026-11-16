@@ -1,0 +1,5 @@
+build/
+# журнал аварий программ Saltic (страховочная сетка)
+yamatakudasai.log
+# пакеты, которые привёз tarantul (по tarantul.json) — у каждого проекта свои
+/tarantul/

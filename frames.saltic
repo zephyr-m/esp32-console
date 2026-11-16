@@ -1,0 +1,64 @@
+-- frames — панель «КАДРЫ» пульта, правая рамка: кадров в секунду числом и
+-- столбиками за последние HISTORY секунд (шкала — от FLOOR или по самому
+-- высокому). Секунды — по тактам ядра (time.now, SECOND тактов на 160 МГц).
+--
+-- Frames { left, top, wide, high, rates, count, since } — место рамки,
+--     кадры по секундам, кадров в текущей секунде и её начало
+-- start() — отсчёт с этой минуты; tick() -> yes, если закончилась секунда
+--     (её кадры — в rates); draw(sheet) — на холст canvas.Canvas
+
+use core.group
+use core.time
+
+SECOND = 160000000
+HISTORY = 14
+FLOOR = 20
+GRAPH = 30
+BAR = 3
+
+Frames = Box {
+    left = 66,
+    top = 12,
+    wide = 62,
+    high = 52,
+    rates = [],
+    count = 0,
+    since = 0
+
+    skill start() {
+        since = time.now()
+        out none
+    }
+
+    skill tick() {
+        count = count + 1
+        (time.elapsed(since, time.now()) < SECOND) { out no }
+        @made = group.add(rates, count)
+        (group.count(made) > HISTORY) { made = group.slice(made, 1, group.count(made)) }
+        rates = made
+        count = 0
+        since = time.now()
+        out yes
+    }
+
+    skill draw(sheet) {
+        sheet.frame(left, top, wide, high)
+        sheet.text(left + 3, top + 2, "КАДРЫ")
+        @last = 0
+        (group.count(rates) > 0) { last = group.get(rates, group.count(rates) - 1) }
+        @said = "{last}"
+        sheet.text(left + wide - 3 - sheet.wide(said), top + 2, said)
+        @most = FLOOR
+        drum (rates) {
+            (beat > most) { most = beat }
+        }
+        @first = HISTORY - group.count(rates)
+        @bottom = top + high - 3
+        drum (group.count(rates)) {
+            @tall = group.get(rates, beat) * GRAPH / most
+            (tall < 1) { tall = 1 }
+            sheet.fill(left + 4 + (first + beat) * (BAR + 1), bottom - tall, BAR, tall)
+        }
+        out none
+    }
+}

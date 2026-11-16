@@ -1,0 +1,48 @@
+-- console — пульт Saltic на экране SSD1306 128×64 (вид B, выбор автора
+-- 16.11.2026), проект на tarantul: экран — пакет ssd1306, `just` собирает,
+-- `just flash` заливает. Pult держит холст (canvas) и три блока, каждый — Box
+-- в своём файле: шапка (head) — «ПУЛЬТ» и время работы, «СИСТЕМА» (system) —
+-- куча, частота, шина, «КАДРЫ» (frames) — кадров в секунду и столбики. Блоки
+-- рисуют себя сами на холсте, Pult раздаёт им время и шлёт кадр на экран.
+-- Всё живое: кадр рисуется заново без остановки. Вечно.
+--
+-- Pult { sheet, top, left, right } — холст и блоки; step() — кадр: нарисовать,
+--     отправить, сосчитать; прошла секунда — время работы +1
+-- program() — пульт
+
+use io
+use canvas
+use head
+use system
+use frames
+use tarantul.ssd1306.ssd1306
+
+Pult = Box {
+    sheet = canvas.Canvas {},
+    top = head.Head {},
+    left = system.System {},
+    right = frames.Frames {}
+
+    skill step() {
+        sheet.clear()
+        top.draw(sheet)
+        left.draw(sheet)
+        right.draw(sheet)
+        sheet.send()
+        (right.tick() == yes) { top.seconds = top.seconds + 1 }
+        out none
+    }
+}
+
+program() {
+    (ssd1306.start() == no) {
+        io.show("экран не ответил")
+        out none
+    }
+    io.show("пульт на экране")
+    @pult = Pult {}
+    @right = pult.right
+    right.start()
+    always { pult.step() }
+    out none
+}

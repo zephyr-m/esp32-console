@@ -1,0 +1,6 @@
+{
+  "project": "pult-esp32",
+  "packages": {
+    "ssd1306": "1"
+  }
+}

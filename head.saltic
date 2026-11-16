@@ -1,0 +1,33 @@
+-- head — шапка пульта: «ПУЛЬТ» слева, время работы платы справа, под ними
+-- пунктир. Время — «ММ:СС», с первого часа — «ЧЧ:ММ».
+--
+-- Head { seconds } — секунд с запуска; draw(sheet) — на холст canvas.Canvas
+-- Внутри: two(number) -> «07»; clock(seconds) -> время текстом
+
+use core.str
+
+TOP = 0
+LINE = 9
+
+skill two(number) {
+    (number < 10) { out "0{number}" }
+    out "{number}"
+}
+
+skill clock(seconds) {
+    @hours = seconds / 3600
+    @minutes = seconds / 60 % 60
+    (hours > 0) { out str.concat(two(hours), str.concat(":", two(minutes))) }
+    out str.concat(two(minutes), str.concat(":", two(seconds % 60)))
+}
+
+Head = Box {
+    seconds = 0
+
+    skill draw(sheet) {
+        sheet.text(0, TOP, "ПУЛЬТ")
+        @shown = clock(seconds)
+        sheet.text(sheet.width - sheet.wide(shown), TOP, shown)
+        out sheet.dotted(LINE)
+    }
+}

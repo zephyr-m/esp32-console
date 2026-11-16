@@ -1,0 +1,90 @@
+-- canvas — холст пульта: кадр 128×64 экрана SSD1306 в арене (страница за
+-- страницей, бит 0 — верхняя точка столбца) и рисование в нём; шрифт —
+-- Spleen 5×8 с кириллицей. На экран кадр уходит целиком (ssd1306.picture).
+--
+-- Canvas { width, height } — холст: clear() — в ноль; dot(x, y) — точка (вне
+--     холста — ничего); fill(x, y, w, h) — прямоугольник; frame(x, y, w, h) —
+--     рамка; dotted(y) — пунктир через точку; text(x, y, words) -> x за
+--     строкой; wide(words) -> ширина строки в точках; send() — кадр на экран
+
+use core.str
+use core.group
+use core.arena
+use os.fonts.spleen
+use os.drivers.font
+use tarantul.ssd1306.ssd1306
+
+BITS = [1, 2, 4, 8, 16, 32, 64, 128]
+COLUMNS = [16, 8, 4, 2, 1]
+STEP = 6
+
+Canvas = Box {
+    width = 128,
+    height = 64
+
+    skill clear() {
+        drum (width * height / 32) { arena.store32(beat * 4, 0) }
+        out none
+    }
+
+    skill dot(x, y) {
+        (x < 0) { out none }
+        (y < 0) { out none }
+        (x >= width) { out none }
+        (y >= height) { out none }
+        @at = y / 8 * width + x
+        @bit = group.get(BITS, y % 8)
+        @byte = arena.load8(at)
+        (byte / bit % 2 == 0) { arena.store8(at, byte + bit) }
+        out none
+    }
+
+    skill fill(x, y, w, h) {
+        drum (h) {
+            @row = y + beat
+            drum (w) { dot(x + beat, row) }
+        }
+        out none
+    }
+
+    skill frame(x, y, w, h) {
+        fill(x, y, w, 1)
+        fill(x, y + h - 1, w, 1)
+        fill(x, y, 1, h)
+        out fill(x + w - 1, y, 1, h)
+    }
+
+    skill dotted(y) {
+        drum (width / 2) { dot(beat * 2, y) }
+        out none
+    }
+
+    skill text(x, y, words) {
+        @at = 0
+        @left = x
+        drum (str.bytes(words)) {
+            (at < str.bytes(words)) {
+                @code = font.font_decode(words, at)
+                @glyph = group.get(spleen.GLYPHS_5X8, font.font_glyph_index(code.value))
+                drum (8) {
+                    @line = group.get(glyph, beat)
+                    @row = y + beat
+                    drum (5) {
+                        (line / group.get(COLUMNS, beat) % 2 == 1) { dot(left + beat, row) }
+                    }
+                }
+                left = left + STEP
+                at = at + code.width
+            }
+        }
+        out left
+    }
+
+    skill wide(words) {
+        out font.font_text_length(words) * STEP - 1
+    }
+
+    skill send() {
+        out ssd1306.picture()
+    }
+}
